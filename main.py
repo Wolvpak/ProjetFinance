@@ -2,6 +2,7 @@ import fundamentalanalysis as fa
 from tqdm import tqdm
 import pandas as pd
 import numpy as np
+import ta
 
 #saves a dictionnary containing the financials and metrics from every company, for every available year
 def download_stocks_fundamentals(stocks_list, filename, api_key):
@@ -24,3 +25,9 @@ def db_fundamentals_summary(stock_list, database, year = '2021'):
         except:
             None
     return yearly_data.transpose()
+
+
+#librarie qui permet de calculer tous les indicateurs une fois le fichier recupéré
+def add_custom_indicators(df):
+    df['adx 4'] = ta.trend.adx(high=df['High'], low=df['Low'], close = df['Close'], window = 4)
+    return df
