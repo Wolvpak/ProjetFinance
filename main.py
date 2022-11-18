@@ -30,4 +30,20 @@ def db_fundamentals_summary(stock_list, database, year = '2021'):
 #librarie qui permet de calculer tous les indicateurs une fois le fichier recupéré
 def add_custom_indicators(df):
     df['adx 4'] = ta.trend.adx(high=df['High'], low=df['Low'], close = df['Close'], window = 4)
+    df.drop(columns = df.columns.difference(['timestamp','Open','High','Low','Close','volume']), inplace=True)
+    # EMA
+    df['ema7']=ta.trend.ema_indicator(close=df['Close'], window=7)
+    df['ema30']=ta.trend.ema_indicator(close=df['Close'], window=30)
+    df['ema50']=ta.trend.ema_indicator(close=df['Close'], window=50)
+    df['ema100']=ta.trend.ema_indicator(close=df['Close'], window=100)
+    df['ema150']=ta.trend.ema_indicator(close=df['Close'], window=150)
+    df['ema200']=ta.trend.ema_indicator(close=df['Close'], window=200)
+    
+    # SMA
+    df['sma7']=ta.trend.sma_indicator(close=df['Close'], window=7)
+    df['sma30']=ta.trend.sma_indicator(close=df['Close'], window=30)
+    df['sma50']=ta.trend.sma_indicator(close=df['Close'], window=50)
+    df['sma100']=ta.trend.sma_indicator(close=df['Close'], window=100)
+    df['sma150']=ta.trend.sma_indicator(close=df['Close'], window=150)
+    df['sma200']=ta.trend.sma_indicator(close=df['Close'], window=200)
     return df
