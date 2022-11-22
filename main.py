@@ -108,12 +108,11 @@ def add_custom_indicators(df):
     df['ppo_signal'] = ta.momentum.ppo_signal(close=df['Close'], window_slow=26, window_fast=12, window_sign=9)
     df['ppo_histo'] = ta.momentum.ppo_hist(close=df['Close'], window_slow=26, window_fast=12, window_sign=9)
 
-
    
-     # PVO
-     df['pvo'] = ta.momentum.pvo(volume = df['Volume'], window_slow=26, window_fast=12, window_sign=9)
-     df['pvo_signal'] = ta.momentum.pvo_signal(volume = df['Volume'], window_slow=26, window_fast=12, window_sign=9)
-     df['pvo_histo'] = ta.momentum.pvo_hist(volume = df['Volume'], window_slow=26, window_fast=12, window_sign=9)
+    # PVO
+    df['pvo'] = ta.momentum.pvo(volume = df['Volume'], window_slow=26, window_fast=12, window_sign=9)
+    df['pvo_signal'] = ta.momentum.pvo_signal(volume = df['Volume'], window_slow=26, window_fast=12, window_sign=9)
+    df['pvo_histo'] = ta.momentum.pvo_hist(volume = df['Volume'], window_slow=26, window_fast=12, window_sign=9)
 
 
     # Aroon
