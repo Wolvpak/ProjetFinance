@@ -31,7 +31,7 @@ def db_fundamentals_summary(stock_list, database, year = '2021'):
 #librarie qui permet de calculer tous les indicateurs une fois le fichier recupéré
 def add_custom_indicators(df):
     df['adx 4'] = ta.trend.adx(high=df['High'], low=df['Low'], close = df['Close'], window = 4)
-    df.drop(columns = df.columns.difference(['timestamp','Open','High','Low','Close','volume']), inplace=True)
+    df.drop(columns = df.columns.difference(['timestamp','Open','High','Low','Close','Volume']), inplace=True)
     # EMA
     df['ema7']=ta.trend.ema_indicator(close=df['Close'], window=7)
     df['ema30']=ta.trend.ema_indicator(close=df['Close'], window=30)
@@ -81,96 +81,6 @@ def add_custom_indicators(df):
     # Récupération des valeurs
     df["f_g"] = fear_and_greed(df["Close"])
     
-    # VMC
-    #Class pour nos indicateurs
-    class VMC():
-        """ VuManChu Cipher B + Divergences 
-            Args:
-                high(pandas.Series): dataset 'High' column.
-                low(pandas.Series): dataset 'Low' column.
-                close(pandas.Series): dataset 'Close' column.
-                wtChannelLen(int): n period.
-                wtAverageLen(int): n period.
-                wtMALen(int): n period.
-                rsiMFIperiod(int): n period.
-                rsiMFIMultiplier(int): n period.
-                rsiMFIPosY(int): n period.
-        """
-        def __init__(
-            self: pd.Series,
-            high: pd.Series,
-            low: pd.Series,
-            close: pd.Series,
-            open: pd.Series,
-            wtChannelLen: int = 9,
-            wtAverageLen: int = 12,
-            wtMALen: int = 3,
-            rsiMFIperiod: int = 60,
-            rsiMFIMultiplier: int = 150,
-            rsiMFIPosY: int = 2.5
-        ) -> None:
-            self._high = high
-            self._low = low
-            self._close = close
-            self._open = open
-            self._wtChannelLen = wtChannelLen
-            self._wtAverageLen = wtAverageLen
-            self._wtMALen = wtMALen
-            self._rsiMFIperiod = rsiMFIperiod
-            self._rsiMFIMultiplier = rsiMFIMultiplier
-            self._rsiMFIPosY = rsiMFIPosY
-            self._run()
-            self.wave_1()
-    
-        def _run(self) -> None:
-            try:
-                self._esa = ta.trend.ema_indicator(
-                    close=self._close, window=self._wtChannelLen)
-            except Exception as e:
-                print(e)
-                raise
-    
-            self._esa = ta.trend.ema_indicator(
-                close=self._close, window=self._wtChannelLen)
-            self._de = ta.trend.ema_indicator(
-                close=abs(self._close - self._esa), window=self._wtChannelLen)
-            self._rsi = ta.trend.sma_indicator(self._close, self._rsiMFIperiod)
-            self._ci = (self._close - self._esa) / (0.015 * self._de)
-    
-        def wave_1(self) -> pd.Series:
-            """VMC Wave 1 
-            Returns:
-                pandas.Series: New feature generated.
-            """
-            wt1 = ta.trend.ema_indicator(self._ci, self._wtAverageLen)
-            return pd.Series(wt1, name="wt1")
-    
-        def wave_2(self) -> pd.Series:
-            """VMC Wave 2
-            Returns:
-                pandas.Series: New feature generated.
-            """
-            wt2 = ta.trend.sma_indicator(self.wave_1(), self._wtMALen)
-            return pd.Series(wt2, name="wt2")
-    
-        def money_flow(self) -> pd.Series:
-            """VMC Money Flow
-                Returns:
-                pandas.Series: New feature generated.
-            """
-            mfi = ((self._close - self._open) /
-                    (self._high - self._low)) * self._rsiMFIMultiplier
-            rsi = ta.trend.sma_indicator(mfi, self._rsiMFIperiod)
-            money_flow = rsi - self._rsiMFIPosY
-            return pd.Series(money_flow, name="money_flow")
-        
-    # Récupération des données
-    df['hlc3'] = (df['High'] +df['Close'] + df['Low'])/3
-    vmc = VMC(high =df['High'],low = df['Low'],close=df['hlc3'],open=df['Open'])
-    df['vmc_wave1'] = vmc.wave_1()
-    df['vmc_wave2'] = vmc.wave_2()
-    vmc = VMC(high=df['High'], low=df['Low'], close=df['Close'], open=df['Open'])
-    df['money_flow'] = vmc.money_flow()
     
     # RSI
     df['rsi'] = ta.momentum.RSIIndicator(close=df['Close'], window=14)
@@ -199,11 +109,11 @@ def add_custom_indicators(df):
     df['ppo_histo'] = ta.momentum.ppo_hist(close=df['Close'], window_slow=26, window_fast=12, window_sign=9)
 
 
-    # PVO
-    df['pvo'] = ta.momentum.pvo(volume = df['volume'], window_slow=26, window_fast=12, window_sign=9)
-    df['pvo_signal'] = ta.momentum.pvo_signal(volume = df['volume'], window_slow=26, window_fast=12, window_sign=9)
-    df['pvo_histo'] = ta.momentum.pvo_hist(volume = df['volume'], window_slow=26, window_fast=12, window_sign=9)
-
+   
+     # PVO
+     df['pvo'] = ta.momentum.pvo(volume = df['Volume'], window_slow=26, window_fast=12, window_sign=9)
+     df['pvo_signal'] = ta.momentum.pvo_signal(volume = df['Volume'], window_slow=26, window_fast=12, window_sign=9)
+     df['pvo_histo'] = ta.momentum.pvo_hist(volume = df['Volume'], window_slow=26, window_fast=12, window_sign=9)
 
 
     # Aroon
