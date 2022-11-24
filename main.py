@@ -107,9 +107,7 @@ def add_classic_indicators(df):
 #https://github.com/stefan-jansen/machine-learning-for-trading/blob/main/07_linear_models/05_predicting_stock_returns_with_linear_regression.ipynb
 #https://github.com/stefan-jansen/machine-learning-for-trading/blob/main/07_linear_models/04_statistical_inference_of_stock_returns_with_statsmodels.ipynb
 
-def add_artificial_variables(df):
-#https://github.com/stefan-jansen/machine-learning-for-trading/blob/main/24_alpha_factor_library/03_101_formulaic_alphas.ipynb
-    return df
+
 
 def generate_lagged_variables(df):
     #https://github.com/stefan-jansen/machine-learning-for-trading/blob/main/04_alpha_factor_research/01_feature_engineering.ipynb
