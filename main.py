@@ -3,7 +3,7 @@ from tqdm import tqdm
 import pandas as pd
 import numpy as np
 import ta
-import requests
+from ta import add_all_ta_features
 
 #saves a dictionnary containing the financials and metrics from every company, for every available year
 def download_stocks_fundamentals(stocks_list, filename, api_key):
@@ -29,9 +29,11 @@ def db_fundamentals_summary(stock_list, database, year = '2021'):
 
 
 #librarie qui permet de calculer tous les indicateurs une fois le fichier recupéré
-def add_custom_indicators(df):
+def add_classic_indicators(df):
+    
     df['adx 4'] = ta.trend.adx(high=df['High'], low=df['Low'], close = df['Close'], window = 4)
-    df.drop(columns = df.columns.difference(['timestamp','Open','High','Low','Close','Volume']), inplace=True)
+    
+#moyennes mobiles
     # EMA
     df['ema7']=ta.trend.ema_indicator(close=df['Close'], window=7)
     df['ema30']=ta.trend.ema_indicator(close=df['Close'], window=30)
@@ -48,74 +50,77 @@ def add_custom_indicators(df):
     df['sma150']=ta.trend.sma_indicator(close=df['Close'], window=150)
     df['sma200']=ta.trend.sma_indicator(close=df['Close'], window=200)
     
-    # MACD
-    macd = ta.trend.MACD(close=df['Close'], window_fast=12, window_slow=26, window_sign=9)
-    df['macd'] = macd.macd()
-    df['macd_signal'] = macd.macd_signal()
-    df['macd_histo'] = macd.macd_diff() #Histogramme MACD
     
-    #Awesome Oscillator
-    df['awesome_oscilllator'] = ta.momentum.awesome_oscillator(high=df['High'], low=df['Low'], window1=5, window2=34)
+#oscillateurs
+    # MACD
+    macd2452 = ta.trend.MACD(close=df['Close'], window_fast=24, window_slow=52, window_sign=9)
+    df['macd_24_52'] = macd2452.macd_diff()
+    macd1226 = ta.trend.MACD(close=df['Close'], window_fast=12, window_slow=26, window_sign=9)
+    df['macd_12_26'] = macd1226.macd_diff()
 
     # ADX
-    df['adx'] =ta.trend.adx(high=df['High'], low=df['Low'], close = df['Close'], window = 14)
-    
-    # Fear and Greed 
-    # Défintion
-    def fear_and_greed(close):
-        ''' Fear and greed indicator
-        '''
-        response = requests.get("https://api.alternative.me/fng/?limit=0&format=json")
-        dataResponse = response.json()['data']
-        fear = pd.DataFrame(dataResponse, columns = ['timestamp', 'value'])
-    
-        fear = fear.set_index(fear['timestamp'])
-        fear.index = pd.to_datetime(fear.index, unit='s')
-        del fear['timestamp']
-        df = pd.DataFrame(close, columns = ['Close'])
-        df['fearResult'] = fear['value']
-        df['FEAR'] = df['fearResult'].ffill()
-        df['FEAR'] = df.FEAR.astype(float)
-        return pd.Series(df['FEAR'], name="FEAR")
-    
-    # Récupération des valeurs
-    df["f_g"] = fear_and_greed(df["Close"])
-    
+    df['adx5'] =ta.trend.adx(high=df['High'], low=df['Low'], close = df['Close'], window = 14)
+    df['adx10'] =ta.trend.adx(high=df['High'], low=df['Low'], close = df['Close'], window = 14)
+    df['adx14'] =ta.trend.adx(high=df['High'], low=df['Low'], close = df['Close'], window = 14)
+    df['adx20'] =ta.trend.adx(high=df['High'], low=df['Low'], close = df['Close'], window = 14)
+    df['adx30'] =ta.trend.adx(high=df['High'], low=df['Low'], close = df['Close'], window = 14)
     
     # RSI
-    df['rsi'] = ta.momentum.RSIIndicator(close=df['Close'], window=14)
-    
+    df['rsi3'] = ta.momentum.RSIIndicator(close=df['Close'], window=3).rsi()
+    df['rsi5'] = ta.momentum.RSIIndicator(close=df['Close'], window=5).rsi()
+    df['rsi7'] = ta.momentum.RSIIndicator(close=df['Close'], window=7).rsi()
+    df['rsi10'] = ta.momentum.RSIIndicator(close=df['Close'], window=10).rsi()
+    df['rsi14'] = ta.momentum.RSIIndicator(close=df['Close'], window=14).rsi()
+    df['rsi17'] = ta.momentum.RSIIndicator(close=df['Close'], window=17).rsi()
+    df['rsi20'] = ta.momentum.RSIIndicator(close=df['Close'], window=20).rsi()
+    df['rsi25'] = ta.momentum.RSIIndicator(close=df['Close'], window=25).rsi()
+    df['rsi30'] = ta.momentum.RSIIndicator(close=df['Close'], window=30).rsi()   
+
     # STOCHASTIC RSI
-    df['stoch_rsi'] = ta.momentum.stochrsi(close=df['Close'], window=14)
-    df['stochastic'] = ta.momentum.stoch(high=df['High'],low=df['Low'],close=df['Close'], window=14,smooth_window=3)
-    df['stoch_signal'] =ta.momentum.stoch_signal(high =df['High'],low=df['Low'],close=df['Close'], window=14, smooth_window=3)
+    df['stochrsi4'] = ta.momentum.StochRSIIndicator(close=df['Close'], window=4).stochrsi()
+    df['stochrsi7'] = ta.momentum.StochRSIIndicator(close=df['Close'], window=7).stochrsi()
+    df['stochrsi10'] = ta.momentum.StochRSIIndicator(close=df['Close'], window=10).stochrsi()
+    df['stochrsi14'] = ta.momentum.StochRSIIndicator(close=df['Close'], window=14).stochrsi()
+    df['stochrsi20'] = ta.momentum.StochRSIIndicator(close=df['Close'], window=20).stochrsi()
+    df['stochrsi25'] = ta.momentum.StochRSIIndicator(close=df['Close'], window=25).stochrsi()
     
-    # WilliamsR
-    df['max_21'] = df['High'].rolling(21).max()
-    df['min_21'] = df['Low'].rolling(21).min()
-    df['william_r'] = (df['Close'] - df['max_21']) / (df['max_21'] - df['min_21']) * 100
-    df['emaw'] = ta.trend.ema_indicator(close=df['william_r'], window=13)
+    #filtrer avec EMA?
+    #WilliamsR
+    df['willr7'] = ta.momentum.WilliamsRIndicator(high=df['High'],low=df['Low'],close=df['Close'],lbp=7).williams_r()
+    df['willr14'] = ta.momentum.WilliamsRIndicator(high=df['High'],low=df['Low'],close=df['Close'],lbp=14).williams_r()
+    df['willr21'] = ta.momentum.WilliamsRIndicator(high=df['High'],low=df['Low'],close=df['Close'],lbp=21).williams_r()
+    df['willr60'] = ta.momentum.WilliamsRIndicator(high=df['High'],low=df['Low'],close=df['Close'],lbp=60).williams_r()
     
     # CCI
-    df['hlc3'] = (df['High'] + df['Low'] + df['Close']) / 3 
-    df['sma_cci'] = df['hlc3'].rolling(40).mean()
-    df['mad'] = df['hlc3'].rolling(40).apply(lambda x: pd.Series(x).mad())
-    df['cci'] = (df['hlc3'] - df['sma_cci']) / (0.015 * df['mad']) 
+    df['CCI5'] = ta.trend.CCIIndicator(high=df['High'],low=df['Low'],close=df['Close'],window=20).cci()
+    df['CCI7'] = ta.trend.CCIIndicator(high=df['High'],low=df['Low'],close=df['Close'],window=20).cci()
+    df['CCI10'] = ta.trend.CCIIndicator(high=df['High'],low=df['Low'],close=df['Close'],window=20).cci()
+    df['CCI14'] = ta.trend.CCIIndicator(high=df['High'],low=df['Low'],close=df['Close'],window=20).cci()
+    df['CCI20'] = ta.trend.CCIIndicator(high=df['High'],low=df['Low'],close=df['Close'],window=20).cci()
 
 
-    # PPO
-    df['ppo'] = ta.momentum.ppo(close=df['Close'], window_slow=26, window_fast=12, window_sign=9)
-    df['ppo_signal'] = ta.momentum.ppo_signal(close=df['Close'], window_slow=26, window_fast=12, window_sign=9)
-    df['ppo_histo'] = ta.momentum.ppo_hist(close=df['Close'], window_slow=26, window_fast=12, window_sign=9)
-
-   
-    # PVO
-    df['pvo'] = ta.momentum.pvo(volume = df['Volume'], window_slow=26, window_fast=12, window_sign=9)
-    df['pvo_signal'] = ta.momentum.pvo_signal(volume = df['Volume'], window_slow=26, window_fast=12, window_sign=9)
-    df['pvo_histo'] = ta.momentum.pvo_hist(volume = df['Volume'], window_slow=26, window_fast=12, window_sign=9)
+    ta_df = add_all_ta_features(df, open="Open", high="High", low="Low", close="Close", volume="Volume")
+    return pd.concat([df,ta_df],axis=1).T.drop_duplicates().T.iloc[200:,:]
 
 
-    # Aroon
-    df['aroon_up'] = ta.trend.aroon_up(close=df['Close'], window=25)
-    df['aroon_dow'] = ta.trend.aroon_down(close=df['Close'], window=25)
+#comprendre comment evaluer la qualité de variables (forward stock return)
+#https://github.com/stefan-jansen/machine-learning-for-trading/blob/main/07_linear_models/05_predicting_stock_returns_with_linear_regression.ipynb
+#https://github.com/stefan-jansen/machine-learning-for-trading/blob/main/07_linear_models/04_statistical_inference_of_stock_returns_with_statsmodels.ipynb
+
+def add_artificial_variables(df):
+#https://github.com/stefan-jansen/machine-learning-for-trading/blob/main/24_alpha_factor_library/03_101_formulaic_alphas.ipynb
     return df
+
+def generate_lagged_variables(df):
+    #https://github.com/stefan-jansen/machine-learning-for-trading/blob/main/04_alpha_factor_research/01_feature_engineering.ipynb
+    #peut se faire avec toutes les variables mais a eviter avec lstm et DRL peut etre
+    return df
+
+#mean reversion
+#https://admiralmarkets.com/education/articles/forex-indicators/macd-indicator-in-depth#:~:text=of%20future%20performance.-,MACD%20Indicator%20Settings%20for%20Intraday%20Trading,that%20works%20well%20on%20M30.
+#et d'autres
+def add_strategy_signals(df):
+    return df
+
+
+#reste : VIX, supertrend, analyse de sentiment, et strategies (vol anomaly), varmax
