@@ -4,6 +4,7 @@ import pandas as pd
 import numpy as np
 import ta
 from ta import add_all_ta_features
+import time
 
 #saves a dictionnary containing the financials and metrics from every company, for every available year
 def download_stocks_fundamentals(stocks_list, filename, api_key):
