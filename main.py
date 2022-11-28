@@ -112,7 +112,7 @@ def add_classic_indicators(df):
 #https://github.com/stefan-jansen/machine-learning-for-trading/blob/main/07_linear_models/04_statistical_inference_of_stock_returns_with_statsmodels.ipynb
 
 def get_euronext_tickers():
-    df = pd.read_csv('euronext_tickers.csv')
+    df = pd.read_csv('euronext_tickers.csv', encoding = 'unicode_escape')
     df = df[df['Exchange']=='Euronext Paris']['Ticker']
     return df.to_list()
 
