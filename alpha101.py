@@ -81,8 +81,8 @@ def add_artificial_variables(df):
     adv20 = ts_mean(v, 20)
     
     #Alpha 001
-    df['Close'][df['Returns'] < 0] = ts_std(df['Returns'] , 20)
-    df['alpha1'] = (rank(ts_argmax(power(df['Close'], 2), 5)).mul(-.5))
+    c[r < 0] = ts_std(r , 20)
+    df['alpha1'] = (rank(ts_argmax(power(c, 2), 5)).mul(-.5))
     
     #Alpha 002
     s1 = rank(ts_delta(log(df['Volume']), 2))
@@ -289,13 +289,13 @@ def add_artificial_variables(df):
             .mul(-1))
     
     #Alpha 046
-    cond = ts_lag(ts_delta(c, 10), 10).div(10).sub(ts_delta(c, 10).div(10))
-    alpha = pd.DataFrame(-np.ones_like(cond),
-                         index=c.index,)
-    alpha[cond.isnull()] = np.nan
-    df['alpha46'] = (cond.where(cond > 0.25,
-                       -alpha.where(cond < 0,
-                       -ts_delta(c, 1))))
+#    cond = ts_lag(ts_delta(c, 10), 10).div(10).sub(ts_delta(c, 10).div(10))
+#    alpha = pd.DataFrame(-np.ones_like(cond),
+#                         index=c.index,)
+#    alpha[cond.isnull()] = np.nan
+#    df['alpha46'] = (cond.where(cond > 0.25,
+#                       -alpha.where(cond < 0,
+#                       -ts_delta(c, 1))))
     
     #Alpha 047
     df['alpha47'] = (rank(c.pow(-1)).mul(v).div(adv20)

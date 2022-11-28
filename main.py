@@ -3,8 +3,9 @@ from tqdm import tqdm
 import pandas as pd
 import numpy as np
 import ta
+import yfinance as yf
 from ta import add_all_ta_features
-import time
+import pandas_datareader.data as web
 
 #saves a dictionnary containing the financials and metrics from every company, for every available year
 def download_stocks_fundamentals(stocks_list, filename, api_key):
@@ -31,7 +32,7 @@ def db_fundamentals_summary(stock_list, database, year = '2021'):
 
 #librarie qui permet de calculer tous les indicateurs une fois le fichier recupéré
 def add_classic_indicators(df):
-    
+    np.seterr(invalid='ignore')
     df['adx 4'] = ta.trend.adx(high=df['High'], low=df['Low'], close = df['Close'], window = 4)
     
 #moyennes mobiles
@@ -99,8 +100,10 @@ def add_classic_indicators(df):
     df['CCI14'] = ta.trend.CCIIndicator(high=df['High'],low=df['Low'],close=df['Close'],window=20).cci()
     df['CCI20'] = ta.trend.CCIIndicator(high=df['High'],low=df['Low'],close=df['Close'],window=20).cci()
 
-
+    #add talib features (volume, trend, momentum, volatility)
     ta_df = add_all_ta_features(df, open="Open", high="High", low="Low", close="Close", volume="Volume")
+    ta_df.index = ta_df.index.date
+    
     return pd.concat([df,ta_df],axis=1).T.drop_duplicates().T.iloc[200:,:]
 
 
@@ -108,7 +111,17 @@ def add_classic_indicators(df):
 #https://github.com/stefan-jansen/machine-learning-for-trading/blob/main/07_linear_models/05_predicting_stock_returns_with_linear_regression.ipynb
 #https://github.com/stefan-jansen/machine-learning-for-trading/blob/main/07_linear_models/04_statistical_inference_of_stock_returns_with_statsmodels.ipynb
 
+def get_euronext_tickers():
+    df = pd.read_csv('euronext_tickers.csv')
+    df = df[df['Exchange']=='Euronext Paris']['Ticker']
+    return df.to_list()
 
+def get_stock_data(stock_ticker, lookback = '5y'):
+    stock_data = yf.Ticker(stock_ticker).history(period=lookback).drop(columns=['Dividends','Stock Splits'])
+    stock_data['Returns'] = stock_data["Close"].pct_change()
+    stock_data['Log Returns'] = np.log(stock_data["Close"]).diff()
+    stock_data.index =stock_data.index.date
+    return stock_data
 
 def generate_lagged_variables(df):
     #https://github.com/stefan-jansen/machine-learning-for-trading/blob/main/04_alpha_factor_research/01_feature_engineering.ipynb
@@ -121,5 +134,12 @@ def generate_lagged_variables(df):
 def add_strategy_signals(df):
     return df
 
-
+def add_fin_ratios_and_commodities(df): #FAMA, Beta, Omega, Sortino, Calmar
+    df["Gold Close"] = get_stock_data('GC=F')['Close']
+    df["WTI Oil Close"] = get_stock_data('CL=F')['Close']
+    df["5Y TY ^FVX"] = get_stock_data('^FVX')['Close']
+    df["CAC 40"] = get_stock_data('^FCHI')['Close']
+    
+    
+    return df
 #reste : VIX, supertrend, analyse de sentiment, et strategies (vol anomaly), varmax
