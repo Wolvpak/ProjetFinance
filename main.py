@@ -5,6 +5,10 @@ import numpy as np
 import ta
 import yfinance as yf
 from ta import add_all_ta_features
+<<<<<<< HEAD
+=======
+import matplotlib as plt
+>>>>>>> 67ae792bb6c174824e77ff6aeff932cf3eeab747
 
 #saves a dictionnary containing the financials and metrics from every company, for every available year
 def download_stocks_fundamentals(stocks_list, filename, api_key):
@@ -98,12 +102,31 @@ def add_classic_indicators(df):
     df['CCI10'] = ta.trend.CCIIndicator(high=df['High'],low=df['Low'],close=df['Close'],window=20).cci()
     df['CCI14'] = ta.trend.CCIIndicator(high=df['High'],low=df['Low'],close=df['Close'],window=20).cci()
     df['CCI20'] = ta.trend.CCIIndicator(high=df['High'],low=df['Low'],close=df['Close'],window=20).cci()
+    
+    data_FT = df[['Date', 'GS']]
+    close_fft = np.fft.fft(np.asarray(data_FT['GS'].tolist()))
+    fft_df = pd.DataFrame({'fft':close_fft})
+    fft_df['absolute'] = fft_df['fft'].apply(lambda x: np.abs(x))
+    fft_df['angle'] = fft_df['fft'].apply(lambda x: np.angle(x))
+    plt.figure(figsize=(14, 7), dpi=100)
+    fft_list = np.asarray(fft_df['fft'].tolist())
+    for num_ in [2, 7, 15, 100]:
+        fft_list_m10= np.copy(fft_list); fft_list_m10[num_:-num_]=0
+        plt.plot(np.fft.ifft(fft_list_m10), label='Fourier transform with {} components'.format(num_))
+    plt.plot(data_FT['GS'],  label='Real')
+    plt.xlabel('Days')
+    plt.ylabel('USD')
+    plt.title('Figure 3: Goldman Sachs (close) stock prices & Fourier transforms')
+    plt.legend()
+    plt.show()
 
     #add talib features (volume, trend, momentum, volatility)
     ta_df = add_all_ta_features(df, open="Open", high="High", low="Low", close="Close", volume="Volume")
     ta_df.index = ta_df.index.date
     
     return pd.concat([df,ta_df],axis=1).T.drop_duplicates().T.iloc[200:,:]
+
+
 
 
 #comprendre comment evaluer la qualité de variables (forward stock return)
