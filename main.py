@@ -5,7 +5,6 @@ import numpy as np
 import ta
 import yfinance as yf
 from ta import add_all_ta_features
-import pandas_datareader.data as web
 
 #saves a dictionnary containing the financials and metrics from every company, for every available year
 def download_stocks_fundamentals(stocks_list, filename, api_key):
@@ -120,10 +119,18 @@ def get_stock_data(stock_ticker, lookback = '5y'):
     stock_data = yf.Ticker(stock_ticker).history(period=lookback).drop(columns=['Dividends','Stock Splits'])
     stock_data['Returns'] = stock_data["Close"].pct_change()
     stock_data['Log Returns'] = np.log(stock_data["Close"]).diff()
-    stock_data.index =stock_data.index.date
+    stock_data.index = pd.to_datetime(stock_data.index.date)
+    stock_data.index.name = 'date'
     return stock_data
 
 def generate_lagged_variables(df):
+    df['Returns n-1'] = df['Returns'].shift(1)
+    df['Returns n-2'] = df['Returns'].shift(2)
+    df['Returns n-3'] = df['Returns'].shift(3)
+    df['Returns n-4'] = df['Returns'].shift(4)
+    df['Returns n-5'] = df['Returns'].shift(5)
+    df['Returns n-6'] = df['Returns'].shift(6)
+    df['Returns n-7'] = df['Returns'].shift(7)
     #https://github.com/stefan-jansen/machine-learning-for-trading/blob/main/04_alpha_factor_research/01_feature_engineering.ipynb
     #peut se faire avec toutes les variables mais a eviter avec lstm et DRL peut etre
     return df
@@ -139,7 +146,29 @@ def add_fin_ratios_and_commodities(df): #FAMA, Beta, Omega, Sortino, Calmar
     df["WTI Oil Close"] = get_stock_data('CL=F')['Close']
     df["5Y TY ^FVX"] = get_stock_data('^FVX')['Close']
     df["CAC 40"] = get_stock_data('^FCHI')['Close']
-    
-    
     return df
-#reste : VIX, supertrend, analyse de sentiment, et strategies (vol anomaly), varmax
+
+   
+def get_market_data():
+    Movements, Open, High, Low, Close = pd.DataFrame(), pd.DataFrame(), pd.DataFrame(), pd.DataFrame(), pd.DataFrame()
+    tickers = get_euronext_tickers()
+    for ticker in tickers:
+        try:
+            stock_data = get_stock_data(ticker)
+            Movements[ticker] = stock_data['Close']-stock_data['Open']
+            Open[ticker] = stock_data['Open']
+            High[ticker] = stock_data['High']
+            Low[ticker] = stock_data['Low']
+            Close[ticker] = stock_data['Close']
+        except:
+            None
+    Movements = Movements.loc[:,Movements.isnull().sum() < 1]     
+    Open = Open.loc[:,Open.isnull().sum() < 1]   
+    High = High.loc[:,High.isnull().sum() < 1]  
+    Low = Low.loc[:,Low.isnull().sum() < 1]  
+    Close = Close.loc[:,Close.isnull().sum() < 1]        
+    print(f'{len(Movements.columns)*100/len(tickers)} % of tickers are available')
+    return Movements, Open, High, Low, Close
+            
+    
+#reste : VIX, supertrend, analyse de sentiment(BERT), et strategies (vol anomaly), varmax
