@@ -154,6 +154,7 @@ def add_fin_ratios_and_commodities(df): #FAMA, Beta, Omega, Sortino, Calmar
     df["WTI Oil Close"] = get_stock_data('CL=F')['Close']
     df["5Y TY ^FVX"] = get_stock_data('^FVX')['Close']
     df["CAC 40"] = get_stock_data('^FCHI')['Close']
+    df["CAC Returns"] = df["CAC 40"].pct_change()
     return df
 
    
