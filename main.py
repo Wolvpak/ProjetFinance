@@ -102,17 +102,11 @@ def add_classic_indicators(df):
     fft_df = pd.DataFrame({'fft':close_fft})
     fft_df['absolute'] = fft_df['fft'].apply(lambda x: np.abs(x))
     fft_df['angle'] = fft_df['fft'].apply(lambda x: np.angle(x))
-    plt.figure(figsize=(14, 7), dpi=100)
     fft_list = np.asarray(fft_df['fft'].tolist())
     for num_ in [2, 7, 15, 100]:
         fft_list_m10= np.copy(fft_list); fft_list_m10[num_:-num_]=0
-        plt.plot(np.fft.ifft(fft_list_m10), label='Fourier transform with {} components'.format(num_))
-    plt.plot(data_FT['GS'],  label='Real')
-    plt.xlabel('Days')
-    plt.ylabel('USD')
-    plt.title('Figure 3: Goldman Sachs (close) stock prices & Fourier transforms')
-    plt.legend()
-    plt.show()
+        df['Fourrier' + num_] = fft_list_m10
+
 
     #add talib features (volume, trend, momentum, volatility)
     ta_df = add_all_ta_features(df, open="Open", high="High", low="Low", close="Close", volume="Volume")
