@@ -6,6 +6,9 @@ import ta
 import yfinance as yf
 from ta import add_all_ta_features
 import matplotlib as plt
+from prophet import Prophet
+import seaborn as sns
+from sklearn.metrics import mean_absolute_error, mean_absolute_percentage_error
 
 
 #saves a dictionnary containing the financials and metrics from every company, for every available year
@@ -176,3 +179,143 @@ def get_market_data(mean_volume):
 #https://towardsdatascience.com/implementation-of-technical-indicators-into-a-machine-learning-framework-for-quantitative-trading-44a05be8e06
 
 #reste : VIX, supertrend, analyse de sentiment(BERT), et strategies (vol anomaly), varmax
+
+def get_prophet_features(nbOfDays):
+    data = get_stock_data('CS.PA', lookback = '5y')
+    data = add_fin_ratios_and_commodities(data)
+    data = data.backfill()
+    data.tail()
+    
+    # Data start date
+    start_date = '2020-01-02'
+    # Data end date. yfinance excludes the end date, so we need to add one day to the last day of data
+    end_date = '2022-01-01' 
+    # Date for splitting training and testing dataset
+    train_end_date = '2021-12-15'
+    
+    data.drop('High', inplace=True, axis=1)
+    data.drop('Low', inplace=True, axis=1)
+    data.drop('Close', inplace=True, axis=1)
+    data.drop('Volume', inplace=True, axis=1)
+    data.drop('Returns', inplace=True, axis=1)
+    data.drop('Log Returns', inplace=True, axis=1)
+    data.drop('Gold Close', inplace=True, axis=1)
+    data.drop('WTI Oil Close', inplace=True, axis=1)
+    data.drop('5Y TY ^FVX', inplace=True, axis=1)
+    data.drop('CAC Returns', inplace=True, axis=1)
+    
+    data = data.reset_index()
+    data.columns = ['ds', 'y', 'CAC 40']
+    
+    # Train test split
+    train = data[data['ds'] <= train_end_date]
+    test = data[data['ds'] > train_end_date]
+
+    # Use the default hyperparameters to initiate the Prophet model
+    model_baseline = Prophet()
+    # Fit the model on the training dataset
+    model_baseline.fit(train)
+    
+    # Create the time range for the forecast
+    future_baseline = model_baseline.make_future_dataframe(periods=16)
+    # Make prediction
+    forecast_baseline = model_baseline.predict(future_baseline)
+
+    
+    # Merge actual and predicted values
+    performance_baseline = pd.merge(test, forecast_baseline[['ds', 'yhat', 'yhat_lower', 'yhat_upper']][-16:], on='ds')
+    # Check MAE value
+    performance_baseline_MAE = mean_absolute_error(performance_baseline['y'], performance_baseline['yhat'])
+
+    # Check MAPE value
+    performance_baseline_MAPE = mean_absolute_percentage_error(performance_baseline['y'], performance_baseline['yhat'])
+    
+     # Add seasonality
+    model_season = Prophet(yearly_seasonality=True, weekly_seasonality=True)
+    # Fit the model on the training dataset
+    model_season.fit(train)
+    
+    # Create the time range for the forecast
+    future_season = model_season.make_future_dataframe(periods=16)
+    # Make prediction
+    forecast_season = model_season.predict(future_season)
+
+    
+    # Merge actual and predicted values
+    performance_season = pd.merge(test, forecast_season[['ds', 'yhat', 'yhat_lower', 'yhat_upper']][-16:], on='ds')
+    # Check MAE value
+    performance_season_MAE = mean_absolute_error(performance_season['y'], performance_season['yhat'])
+
+    # Check MAPE value
+    performance_season_MAPE = mean_absolute_percentage_error(performance_season['y'], performance_season['yhat'])
+    
+    # Add seasonality 
+    model_multivariate = Prophet(yearly_seasonality=True, weekly_seasonality=True)
+    # Add regressor
+    model_multivariate.add_regressor('CAC 40', standardize=False)
+    # Fit the model on the training dataset
+    model_multivariate.fit(train)
+    
+    # Create the time range for the forecast
+    future_multivariate = model_multivariate.make_future_dataframe(periods=16)
+    # Append the regressor values
+    future_multivariate = pd.merge(future_multivariate, data[['ds', 'CAC 40']], on='ds', how='inner')
+    # Fill the missing values with the previous value
+    future_multivariate = future_multivariate.fillna(method='ffill')
+    
+    # Make prediction
+    forecast_multivariate = model_multivariate.predict(future_multivariate)
+
+    # Merge actual and predicted values
+    performance_multivariate = pd.merge(test, forecast_multivariate[['ds', 'yhat', 'yhat_lower', 'yhat_upper']][-16:], on='ds')
+    # Check MAE value
+    performance_multivariate_MAE = mean_absolute_error(performance_multivariate['y'], performance_multivariate['yhat'])
+
+    # Check MAPE value
+    performance_multivariate_MAPE = mean_absolute_percentage_error(performance_multivariate['y'], performance_multivariate['yhat'])
+    
+    # COVID time window
+    COVID = pd.DataFrame({
+        'holiday': 'COVID',
+        'ds': pd.to_datetime(['2020-03-15']),
+        'lower_window': -15,
+        'upper_window': 15,    
+    })
+    # Super Bowl time window
+    superbowl = pd.DataFrame({
+        'holiday': 'superbowl',
+        'ds': pd.to_datetime(['2020-02-02', '2021-02-07']),
+        'lower_window': -7,
+        'upper_window': 1,    
+    })
+    # Combine all events
+    events = pd.concat((COVID, superbowl))
+    
+    # Add holidays
+    model_holiday = Prophet(yearly_seasonality=True, weekly_seasonality=True, holidays=events)
+    # Add built-in country-specific holidays
+    model_holiday.add_country_holidays(country_name='FR')
+    # Add regressor
+    model_holiday.add_regressor('CAC 40', standardize=False)
+    # Fit the model on the training dataset
+    model_holiday.fit(train)
+    # All the holidays and events
+    model_holiday.train_holiday_names
+    
+    # Create the time range for the forecast
+    future_holiday = model_holiday.make_future_dataframe(periods=16)
+    # Append the regressor values
+    future_holiday = pd.merge(future_holiday, data[['ds', 'CAC 40']], on='ds', how='inner')
+    # Fill the missing values with the previous value
+    future_holiday = future_holiday.fillna(method='ffill')
+    # Make prediction
+    forecast_holiday = model_holiday.predict(future_holiday)
+    
+    # Merge actual and predicted values
+    performance_holiday = pd.merge(test, forecast_holiday[['ds', 'yhat', 'yhat_lower', 'yhat_upper']][-16:], on='ds')
+    # Check MAE value
+    performance_holiday_MAE = mean_absolute_error(performance_holiday['y'], performance_holiday['yhat'])
+
+    print(forecast_holiday[['ds', 'yhat', 'yhat_lower', 'yhat_upper']].tail(nbOfDays))
+    
+get_prophet_features(3)
