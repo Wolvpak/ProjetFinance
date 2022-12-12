@@ -38,17 +38,24 @@ def beta(stock_returns):
 
 def add_risk_measures(stock_data, stock_ret):  #= stock_data['Returns']
     for window in [252, 126, 52, 26]:
-        stock_data['Sharpe ' + str(window)] = stock_ret.rolling(window).apply(sharpe)
-        stock_data['Sortino ' + str(window)] = stock_ret.rolling(window).apply(sortino)
-        stock_data['Treynor ' + str(window)] = stock_ret.rolling(window).apply(treynor)
-        stock_data['Beta ' + str(window)] = stock_ret.rolling(window).apply(beta)
+        stock_data[f'Sharpe {window}'] = stock_ret.rolling(window).apply(sharpe)
+        stock_data[f'Sortino {window}'] = stock_ret.rolling(window).apply(sortino)
+        stock_data[f'Treynor {window}'] = stock_ret.rolling(window).apply(treynor)
+        stock_data[f'Beta {window}'] = stock_ret.rolling(window).apply(beta)
     for window in [252, 126, 52]:    
-        stock_data['Var ' + str(window)] = stock_ret.rolling(window).apply(var)
-        stock_data['CVar ' + str(window)] = stock_ret.rolling(window).apply(cvar)
+        stock_data[f'Var {window}'] = stock_ret.rolling(window).apply(var)
+        stock_data[f'CVar {window}'] = stock_ret.rolling(window).apply(cvar)
+    return stock_data
+
+def add_fin_ratios_and_commodities(stock_data): #FAMA, Beta, Omega, Sortino, Calmar
+    stock_data["Gold Close"] = get_stock_data('GC=F')['Close']
+    stock_data["WTI Oil Close"] = get_stock_data('CL=F')['Close']
+    stock_data["5Y TY ^FVX"] = get_stock_data('^FVX')['Close']
+    stock_data["CAC 40"] = get_stock_data('^FCHI')['Close']
+    stock_data["CAC Returns"] = stock_data["CAC 40"].pct_change()
     return stock_data
 
 def annual_risk_measures(stock_data, stock_ret):
-    stock_data['Upside potential'] = stock_ret.rolling(252).apply(upside_potential)
     stock_data['Sortino'] = stock_ret.rolling(252).apply(sortino)
     stock_data['Beta'] = stock_ret.rolling(252).apply(beta)
     stock_data['CVar'] = stock_ret.rolling(252).apply(cvar)

@@ -77,14 +77,13 @@ def ts_cov(x, y, window=10):
 
 def add_artificial_variables(df):
 #https://github.com/stefan-jansen/machine-learning-for-trading/blob/main/24_alpha_factor_library/03_101_formulaic_alphas.ipynb
-
     vwap = df['Open'].add(df['High']).add(df['Low']).add(df['Close']).div(4)
-    o = df['Open']
-    h = df['High']
-    l = df['Low']
-    c = df['Close']
-    r = df['Returns']
-    v = df['Volume']
+    o = df['Open'].copy()
+    h = df['High'].copy()
+    l = df['Low'].copy()
+    c = df['Close'].copy()
+    r = df['Returns'].copy()
+    v = df['Volume'].copy()
     adv180 = ts_mean(v, 180)
     adv81 = ts_mean(v, 81)
     adv150= ts_mean(v, 150)
@@ -220,13 +219,13 @@ def add_artificial_variables(df):
             .div(ts_sum(v, 20)))
     
     #Alpha 031
-    df['alpha31'] = (rank(rank(rank(ts_weighted_mean(rank(rank(ts_delta(c, 10))).mul(-1), 10))))
-            .add(rank(ts_delta(c, 3).mul(-1)))
-            .add(sign(scale(ts_corr(adv20, l, 12)
-                            .replace([-np.inf, np.inf],
-                                     np.nan))))
-            .stack('ticker')
-            .swaplevel())
+#    df['alpha31'] = (rank(rank(rank(ts_weighted_mean(rank(rank(ts_delta(c, 10))).mul(-1), 10))))
+#            .add(rank(ts_delta(c, 3).mul(-1)))
+#            .add(sign(scale(ts_corr(adv20, l, 12)
+#                            .replace([-np.inf, np.inf],
+#                                     np.nan))))
+#            .stack('ticker')
+#            .swaplevel())
     
     #Alpha 032
     df['alpha32'] = (scale(ts_mean(c, 7).sub(c))
@@ -266,10 +265,10 @@ def add_artificial_variables(df):
             .mul(-1))
     
     #Alpha 039
-    df['alpha39'] = (rank(ts_delta(c, 7).mul(rank(ts_weighted_mean(v.div(adv20), 9)).mul(-1).add(1))).mul(-1)
-            .mul(rank(ts_mean(r, 250).add(1)))
-            .stack('ticker')
-            .swaplevel())
+#    df['alpha39'] = (rank(ts_delta(c, 7).mul(rank(ts_weighted_mean(v.div(adv20), 9)).mul(-1).add(1))).mul(-1)
+#            .mul(rank(ts_mean(r, 250).add(1)))
+#            .stack('ticker')
+#            .swaplevel())
     
     #Alpha 040
     df['alpha40'] = (rank(ts_std(h, 10))
@@ -370,10 +369,10 @@ def add_artificial_variables(df):
     #df['alpha56'] = -rank(ts_sum(returns, 10) / ts_sum(ts_sum(returns, 2), 3)) * rank((returns * cap))
     
     #Alpha 057
-    df['alpha57'] = (c.sub(vwap.add(1e-5))
-            .div(ts_weighted_mean(rank(ts_argmax(c, 30)))).mul(-1)
-            .stack('ticker')
-            .swaplevel())
+#    df['alpha57'] = (c.sub(vwap.add(1e-5))
+#            .div(ts_weighted_mean(rank(ts_argmax(c, 30)))).mul(-1)
+#            .stack('ticker')
+#            .swaplevel())
     
     #Alpha 058
     #df['alpha58'] = (-1 * ts_rank(ts_weighted_mean(ts_corr(IndNeutralize(vwap, IndClass.sector), v, 3), 7), 5))
@@ -422,11 +421,11 @@ def add_artificial_variables(df):
 
     #Alpha 066
     w = 0.96633
-    df['alpha66'] = (rank(ts_weighted_mean(ts_delta(vwap, 4), 7))
-            .add(ts_rank(ts_weighted_mean(l.mul(w).add(l.mul(1 - w))
-                                           .sub(vwap)
-                                           .div(o.sub(h.add(l).div(2)).add(1e-3)), 11), 7))
-            .mul(-1))
+#    df['alpha66'] = (rank(ts_weighted_mean(ts_delta(vwap, 4), 7))
+#            .add(ts_rank(ts_weighted_mean(l.mul(w).add(l.mul(1 - w))
+#                                           .sub(vwap)
+#                                           .div(o.sub(h.add(l).div(2)).add(1e-3)), 11), 7))
+#            .mul(-1))
     
     #Alpha 067
     #df['alpha67'] = ((rank((h - ts_min(h, 2.14593)))^rank(correlation(IndNeutralize(vwap, IndClass.sector), IndNeutralize(adv20, IndClass.subindustry), 6.02936))) * -1) 
@@ -445,27 +444,27 @@ def add_artificial_variables(df):
     #df['alpha70'] = ((rank(delta(vwap, 1.29456))^Ts_Rank(correlation(IndNeutralize(close, IndClass.industry), adv50, 17.8256), 17.9171)) * -1)
     
     #Alpha 071
-    s1 = (ts_rank(ts_weighted_mean(ts_corr(ts_rank(c, 3),
-                                       ts_rank(ts_mean(v, 180), 12), 18), 4), 16))
-    s2 = (ts_rank(ts_weighted_mean(rank(l.add(o).
-                                    sub(vwap.mul(2)))
-                               .pow(2), 16), 4))
-
-    df['alpha71'] = (s1.where(s1 > s2, s2))
+#    s1 = (ts_rank(ts_weighted_mean(ts_corr(ts_rank(c, 3),
+#                                       ts_rank(ts_mean(v, 180), 12), 18), 4), 16))
+#    s2 = (ts_rank(ts_weighted_mean(rank(l.add(o).
+#                                    sub(vwap.mul(2)))
+#                              .pow(2), 16), 4))
+#
+#    df['alpha71'] = (s1.where(s1 > s2, s2))
     
-    #Alpha 072
-    df['alpha72'] = (rank(ts_weighted_mean(ts_corr(h.add(l).div(2), ts_mean(v, 40), 9), 10))
-            .div(rank(ts_weighted_mean(ts_corr(ts_rank(vwap, 3), ts_rank(v, 18), 6), 2))))
+#    #Alpha 072
+#    df['alpha72'] = (rank(ts_weighted_mean(ts_corr(h.add(l).div(2), ts_mean(v, 40), 9), 10))
+#            .div(rank(ts_weighted_mean(ts_corr(ts_rank(vwap, 3), ts_rank(v, 18), 6), 2))))
     
     #Alpha 073
-    w = 0.147155
-    s1 = rank(ts_weighted_mean(ts_delta(vwap, 5), 3))
-    s2 = (ts_rank(ts_weighted_mean(ts_delta(o.mul(w).add(l.mul(1 - w)), 2)
-                                   .div(o.mul(w).add(l.mul(1 - w)).mul(-1)), 3), 16))
-    df['alpha73'] = (s1.where(s1 > s2, s2)
-            .mul(-1)
-            .stack('ticker')
-            .swaplevel())
+#    w = 0.147155
+#    s1 = rank(ts_weighted_mean(ts_delta(vwap, 5), 3))
+#    s2 = (ts_rank(ts_weighted_mean(ts_delta(o.mul(w).add(l.mul(1 - w)), 2)
+#                                   .div(o.mul(w).add(l.mul(1 - w)).mul(-1)), 3), 16))
+#    df['alpha73'] = (s1.where(s1 > s2, s2)
+#            .mul(-1)
+#            .stack('ticker')
+ #           .swaplevel())
     
     #Alpha 074
     w = 0.0261661
@@ -482,9 +481,9 @@ def add_artificial_variables(df):
     #df['alpha76'] =  (max(rank(decay_linear(delta(vwap, 1.24383), 11.8259)), Ts_Rank(decay_linear(Ts_Rank(correlation(IndNeutralize(l, IndClass.sector), adv81, 8.14941), 19.569), 17.1543), 19.383)) * -1) 
     
     #Alpha 077
-    s1 = rank(ts_weighted_mean(h.add(l).div(2).sub(vwap), 20))
-    s2 = rank(ts_weighted_mean(ts_corr(h.add(l).div(2), ts_mean(v, 40), 3), 5))
-    df['alpha77'] = (s1.where(s1 < s2, s2))
+#    s1 = rank(ts_weighted_mean(h.add(l).div(2).sub(vwap), 20))
+#    s2 = rank(ts_weighted_mean(ts_corr(h.add(l).div(2), ts_mean(v, 40), 3), 5))
+#    df['alpha77'] = (s1.where(s1 < s2, s2))
     
     #Alpha 078
     w = 0.352233
@@ -538,13 +537,13 @@ def add_artificial_variables(df):
     #df['alpha87'] = (max(rank(decay_linear(delta(((c * 0.369701) + (vwap * (1 - 0.369701))), 1.91233), 2.65461)), Ts_Rank(decay_linear(abs(correlation(IndNeutralize(adv81, IndClass.industry), c, 13.4132)), 4.89768), 14.4535)) * -1) 
     
     #Alpha 088
-    s1 = (rank(ts_weighted_mean(rank(o)
-                                .add(rank(l))
-                                .sub(rank(h))
-                                .add(rank(c)), 8)))
-    s2 = ts_rank(ts_weighted_mean(ts_corr(ts_rank(c, 8),
-                                          ts_rank(ts_mean(v, 60), 20), 8), 6), 2)
-    df['alpha88'] = (s1.where(s1 < s2, s2))
+#    s1 = (rank(ts_weighted_mean(rank(o)
+#                                .add(rank(l))
+#                                .sub(rank(h))
+#                                .add(rank(c)), 8)))
+#    s2 = ts_rank(ts_weighted_mean(ts_corr(ts_rank(c, 8),
+#                                          ts_rank(ts_mean(v, 60), 20), 8), 6), 2)
+#    df['alpha88'] = (s1.where(s1 < s2, s2))
     
     #Alpha 089
     #df['alpha89'] = (Ts_Rank(decay_linear(correlation(((l * 0.967285) + (l * (1 - 0.967285))), adv10, 6.94279), 5.51607), 3.79744) - Ts_Rank(decay_linear(delta(IndNeutralize(vwap, IndClass.industry), 3.48158), 10.1466), 15.3012)) 
@@ -556,9 +555,9 @@ def add_artificial_variables(df):
     #df['alpha91'] = ((Ts_Rank(decay_linear(decay_linear(correlation(IndNeutralize(c, IndClass.industry), v, 9.74928), 16.398), 3.83219), 4.8667) - rank(decay_linear(correlation(vwap, adv30, 4.01303), 2.6809))) * -1)
     
     #Alpha 092
-    p1 = ts_rank(ts_weighted_mean(h.add(l).div(2).add(c).lt(l.add(o)), 15), 18)
-    p2 = ts_rank(ts_weighted_mean(ts_corr(rank(l), rank(ts_mean(v, 30)), 7), 6), 6)
-    df['alpha92'] = (p1.where(p1<p2, p2))
+#    p1 = ts_rank(ts_weighted_mean(h.add(l).div(2).add(c).lt(l.add(o)), 15), 18)
+#    p2 = ts_rank(ts_weighted_mean(ts_corr(rank(l), rank(ts_mean(v, 30)), 7), 6), 6)
+#    df['alpha92'] = (p1.where(p1<p2, p2))
     
     #Alpha 093
     #df['alpha93'] = (Ts_Rank(decay_linear(correlation(IndNeutralize(vwap, IndClass.industry), adv81, 17.4193), 19.848), 7.54455) / rank(decay_linear(delta(((c * 0.524434) + (vwap * (1 - 0.524434))), 2.77377), 16.2664))) 
@@ -577,24 +576,24 @@ def add_artificial_variables(df):
 
     
     #Alpha 096
-    s1 = ts_rank(ts_weighted_mean(ts_corr(rank(vwap), rank(v), 10), 4), 8)
-    s2 = ts_rank(ts_weighted_mean(ts_argmax(ts_corr(ts_rank(c, 7),
-                                                    ts_rank(ts_mean(v, 60), 10), 10), 12), 14), 13)
-    df['alpha96'] = (s1.where(s1 > s2, s2)
-            .mul(-1))
+#    s1 = ts_rank(ts_weighted_mean(ts_corr(rank(vwap), rank(v), 10), 4), 8)
+#    s2 = ts_rank(ts_weighted_mean(ts_argmax(ts_corr(ts_rank(c, 7),
+#                                                    ts_rank(ts_mean(v, 60), 10), 10), 12), 14), 13)
+#    df['alpha96'] = (s1.where(s1 > s2, s2)
+#            .mul(-1))
 
     
     #Alpha 097
     #df['alpha97'] = ((rank(decay_linear(delta(IndNeutralize(((l * 0.721001) + (vwap * (1 - 0.721001))), IndClass.industry), 3.3705), 20.4523)) - Ts_Rank(decay_linear(Ts_Rank(correlation(Ts_Rank(l, 7.87871), Ts_Rank(adv60, 17.255), 4.97547), 18.5925), 15.7152), 6.71659)) * -1) 
     
     #Alpha 098
-    adv5 = ts_mean(v, 5)
-    adv15 = ts_mean(v, 15)
-    df['alpha98'] = (rank(ts_weighted_mean(ts_corr(vwap, ts_mean(adv5, 26), 4), 7))
-            .sub(rank(ts_weighted_mean(ts_rank(ts_argmin(ts_corr(rank(o),
-                                                                 rank(adv15), 20), 8), 6))))
-            .stack('ticker')
-            .swaplevel())
+#    adv5 = ts_mean(v, 5)
+#    adv15 = ts_mean(v, 15)
+#    df['alpha98'] = (rank(ts_weighted_mean(ts_corr(vwap, ts_mean(adv5, 26), 4), 7))
+#            .sub(rank(ts_weighted_mean(ts_rank(ts_argmin(ts_corr(rank(o),
+#                                                                 rank(adv15), 20), 8), 6))))
+#            .stack('ticker')
+#            .swaplevel())
 
     
     #Alpha 099
