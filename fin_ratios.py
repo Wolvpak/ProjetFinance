@@ -37,7 +37,7 @@ def beta(stock_returns):
     return cov / market_var
 
 def add_risk_measures(stock_data, stock_ret):  #= stock_data['Returns']
-    for window in [252, 126, 52, 26]:
+    for window in [252, 126, 52, 26, 24, 22, 18, 16, 14, 12, 10]:
         stock_data[f'Sharpe {window}'] = stock_ret.rolling(window).apply(sharpe)
         stock_data[f'Sortino {window}'] = stock_ret.rolling(window).apply(sortino)
         stock_data[f'Treynor {window}'] = stock_ret.rolling(window).apply(treynor)
